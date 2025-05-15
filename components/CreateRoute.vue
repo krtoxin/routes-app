@@ -1,17 +1,14 @@
 <template>
   <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="$emit('close')">
     <div class="bg-white rounded-lg w-full max-w-3xl shadow-lg overflow-hidden text-gray-900">
-      <!-- Header -->
       <div class="flex justify-between items-center p-6 border-b">
         <h2 class="text-xl font-semibold">Персональний маршрут документа</h2>
         <UButton icon="i-heroicons-x-mark" color="neutral" variant="ghost" @click="$emit('close')" />
       </div>
 
-      <!-- Body -->
       <div class="p-6 space-y-6">
         <p class="text-gray-800">Це ваш персональний маршрут документа, який бачите тільки ви</p>
 
-        <!-- Steps + Arrows -->
         <div class="overflow-x-auto pb-2">
           <div class="flex items-center gap-3">
             <template v-for="(step, index) in steps" :key="step.id">
@@ -41,7 +38,6 @@
               </div>
             </template>
 
-            <!-- Add button -->
             <UButton
                 class="ml-2 flex-shrink-0"
                 variant="outline"
@@ -56,7 +52,6 @@
 
         <p class="text-gray-700">Буде відправлено документів: {{ steps.length }}</p>
 
-        <!-- Recipients -->
         <div>
           <div v-if="currentRecipients.length" class="overflow-auto max-h-56 border rounded mt-2">
             <table class="w-full text-left text-sm">
@@ -79,7 +74,6 @@
           <p v-else class="text-gray-600">Немає одержувачів</p>
         </div>
 
-        <!-- Sender -->
         <div>
           <label class="block text-sm font-medium mb-1">Від</label>
           <select v-model="sender" class="w-full border border-gray-300 rounded px-4 py-2 text-gray-800 disabled:bg-gray-100 disabled:text-gray-500">
@@ -89,7 +83,6 @@
           </select>
         </div>
 
-        <!-- Recipient form -->
         <div class="flex flex-col md:flex-row gap-4">
           <div class="flex-1">
             <label class="block mb-1 font-medium">Email одержувача</label>
@@ -114,7 +107,6 @@
           </label>
         </div>
 
-        <!-- Position -->
         <div class="flex justify-end items-center gap-2">
           <label class="font-medium">Посада</label>
           <select v-model="position" class="w-52 border border-gray-300 rounded px-4 py-2 text-gray-800 disabled:bg-gray-100 disabled:text-gray-500">
@@ -122,7 +114,6 @@
           </select>
         </div>
 
-        <!-- Template modal & dropdown -->
         <div v-if="showDevModal" class="mt-4 p-4 bg-gray-100 text-center rounded border text-gray-800">
           <p>🔧 Модуль "Зберегти як шаблон" у розробці</p>
           <UButton color="primary" @click="showDevModal = false">Закрити</UButton>
@@ -137,7 +128,6 @@
         </div>
       </div>
 
-      <!-- Footer -->
       <div class="flex justify-between items-center p-6 border-t">
         <div class="flex gap-2">
           <UButton icon="i-heroicons-arrow-down-tray" color="primary" variant="solid" @click="saveAsTemplate">Зберегти як шаблон</UButton>
@@ -154,19 +144,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-
-interface Recipient {
-  email: string
-  action: string
-  position: string
-  notify: boolean
-  attachAsLetter: boolean
-}
-
-interface RouteStep {
-  id: number
-  recipients: Recipient[]
-}
+import type { Recipient, RouteStep } from '~/models/RouteModels'
 
 const steps = ref<RouteStep[]>([{ id: 1, recipients: [] }])
 const currentStepIndex = 0
