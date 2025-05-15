@@ -4,7 +4,9 @@
       <!-- Header -->
       <div class="modal-header">
         <h2>Персональний маршрут документа</h2>
-        <button class="close-button" @click="$emit('close')">×</button>
+        <button class="close-button" @click="$emit('close')">
+          <UIcon name="i-heroicons-x-mark" class="w-5 h-5" />
+        </button>
       </div>
 
       <!-- Body -->
@@ -21,7 +23,9 @@
                   Крок {{ index + 1 }}
                   <span v-if="index < steps.length - 1" class="arrow-right">›</span>
                 </div>
-                <button v-if="index !== 0" class="remove-step" @click="removeStep(index)">×</button>
+                <button v-if="index !== 0" class="remove-step" @click="removeStep(index)">
+                  <UIcon name="i-heroicons-x-mark" class="w-3 h-3" />
+                </button>
               </div>
               <div v-if="index < steps.length - 1" class="arrow-wrapper">
                 <div class="line">
@@ -30,7 +34,7 @@
               </div>
             </template>
             <button class="add-button" @click="addStep">
-              <span class="plus-icon">+</span> Додати
+              <UIcon name="i-heroicons-plus" class="w-5 h-5" /> Додати
             </button>
           </div>
         </div>
@@ -45,18 +49,22 @@
           <template v-if="currentRecipients.length">
             <div class="recipients-scroll-wrapper">
               <table class="recipient-table">
-              <thead><tr><th>Одержувач</th><th>Тип</th><th>Посада</th><th></th></tr></thead>
-              <tbody>
-              <tr v-for="(r, idx) in currentRecipients" :key="idx">
-                <td>{{ r.email }}</td>
-                <td>{{ r.action }}</td>
-                <td>{{ r.position }}</td>
-                <td>
-                  <button class="icon-button" title="Редагувати" @click="editRecipient(idx)">✎</button>
-                  <button class="icon-button" title="Видалити" @click="removeRecipient(idx)">✕</button>
-                </td>
-              </tr>
-              </tbody>
+                <thead><tr><th>Одержувач</th><th>Тип</th><th>Посада</th><th></th></tr></thead>
+                <tbody>
+                <tr v-for="(r, idx) in currentRecipients" :key="idx">
+                  <td>{{ r.email }}</td>
+                  <td>{{ r.action }}</td>
+                  <td>{{ r.position }}</td>
+                  <td>
+                    <button class="icon-button" title="Редагувати" @click="editRecipient(idx)">
+                      <UIcon name="i-heroicons-pencil-square" class="w-4 h-4" />
+                    </button>
+                    <button class="icon-button" title="Видалити" @click="removeRecipient(idx)">
+                      <UIcon name="i-heroicons-trash" class="w-4 h-4" />
+                    </button>
+                  </td>
+                </tr>
+                </tbody>
               </table>
             </div>
           </template>
@@ -114,7 +122,10 @@
 
         <!-- Save Template modal -->
         <div v-if="showDevModal" class="mt-4 p-4 bg-gray-100 text-center rounded border">
-          <p>🔧 Модуль "Зберегти як шаблон" у розробці</p>
+          <p>
+            <UIcon name="i-heroicons-wrench" class="w-5 h-5 inline-block mr-1" />
+            Модуль "Зберегти як шаблон" у розробці
+          </p>
           <button @click="showDevModal = false" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded">
             Закрити
           </button>
@@ -133,12 +144,25 @@
       <!-- Footer buttons -->
       <div class="modal-footer">
         <div class="left-buttons">
-          <button class="save-template-button" @click="saveAsTemplate">💾 Зберегти як шаблон</button>
-          <button class="template-button" @click="toggleTemplateDropdown">📂</button>
+          <button class="save-template-button" @click="saveAsTemplate">
+            <UIcon name="i-heroicons-document-arrow-down" class="w-5 h-5" /> Зберегти як шаблон
+          </button>
+          <button class="template-button" @click="toggleTemplateDropdown">
+            <UIcon name="i-heroicons-folder" class="w-5 h-5" />
+          </button>
         </div>
         <div class="right-buttons">
-          <button class="add-recipient-button" :disabled="!recipientEmail" @click="addRecipient">➕ Додати одержувача</button>
-          <button class="send-button" @click="sendRoute">📤 Відправити</button>
+          <button class="add-recipient-button" :disabled="!recipientEmail" @click="addRecipient">
+            <UIcon name="i-heroicons-user-plus" class="w-5 h-5" /> Додати одержувача
+          </button>
+          <button
+              class="send-button"
+              :class="{ 'send-button-disabled': !hasRecipients }"
+              :disabled="!hasRecipients"
+              @click="sendRoute"
+          >
+            <UIcon name="i-heroicons-paper-airplane" class="w-5 h-5" /> Відправити
+          </button>
         </div>
       </div>
     </div>
@@ -148,23 +172,15 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 
-interface Recipient {
-  email: string
-  action: string
-  position: string
-  notify: boolean
-  attachAsLetter: boolean
-}
-
-interface RouteStep {
-  id: number
-  recipients: Recipient[]
-}
+import type { Recipient, RouteStep } from '~/models/RouteModels'
 
 const steps = ref<RouteStep[]>([{ id: 1, recipients: [] }])
 const currentStepIndex = 0
 let nextStepId = 2
 
+const hasRecipients = computed(() => {
+  return steps.value.some(step => step.recipients.length > 0)
+})
 const editingIndex = ref<number | null>(null)
 const recipientEmail = ref('')
 const purpose = ref('На підпис')
@@ -181,7 +197,7 @@ const actions = [
   'На узгодження',
   'Відправити на пошту',
   'Для перегляду',
-  'Редагування (необов’язкове)',
+  'Редагування (необов\'язкове)',
   'Редагування і узгодження',
   'Підпис і печатка',
   'На печатку'
@@ -229,7 +245,8 @@ const addRecipient = () => {
 }
 
 const sendRoute = () => {
-  alert('📤 Маршрут відправлено!')
+  if (!hasRecipients.value) return
+  alert('Маршрут відправлено!')
   console.log(JSON.stringify(steps.value, null, 2))
 }
 
@@ -250,7 +267,6 @@ const editRecipient = (index: number) => {
   addAttachments.value = r.attachAsLetter
   editingIndex.value = index
 }
-
 </script>
 
 <style scoped>
@@ -321,6 +337,9 @@ select {
   line-height: 20px;
   cursor: pointer;
   border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .step-container {
@@ -379,10 +398,12 @@ select {
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 16px;
   margin-left: 8px;
   color: #000;
   vertical-align: middle;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .info-row, .recipients-row {
@@ -494,9 +515,11 @@ select {
 .close-button {
   background: none;
   border: none;
-  font-size: 1.5rem;
   cursor: pointer;
   color: #999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .modal-body {
@@ -536,6 +559,11 @@ select {
   color: white;
   border: none;
 }
+.send-button-disabled {
+  background-color: #a0d4f5;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
 
 .template-button {
   padding: 0.75rem;
@@ -572,5 +600,4 @@ select {
   border-bottom: 2px solid #22a7f0;
   background: transparent;
 }
-
 </style>
