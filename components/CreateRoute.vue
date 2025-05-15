@@ -172,7 +172,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 
-import type { Recipient, RouteStep } from '~/models/RouteModels'
+import type { Recipient, RouteStep } from '~/types/RouteStep'
 
 const steps = ref<RouteStep[]>([{ id: 1, recipients: [] }])
 const currentStepIndex = 0
