@@ -1,206 +1,359 @@
 <template>
   <div class="modal-overlay" @click.self="$emit('close')">
     <div class="modal-container">
+      <!-- Header -->
       <div class="modal-header">
         <h2>Персональний маршрут документа</h2>
         <button class="close-button" @click="$emit('close')">×</button>
       </div>
 
+      <!-- Body -->
       <div class="modal-body">
-        <p class="description">
-          Це ваш персональний маршрут документа, який бачите тільки ви
-        </p>
+        <p class="description">Це ваш персональний маршрут документа, який бачите тільки ви</p>
 
-        <div class="step-container">
-          <div class="step">
-            <div class="step-number">Крок 1</div>
+        <!-- Steps + Arrows -->
+        <div class="step-scroll">
+          <div class="step-container">
+            <template v-for="(step, index) in steps" :key="step.id">
+              <div :class="['step-box', { active: currentStepIndex === index }]" class="relative">
+                <div class="step">
+                  <span v-if="index > 0" class="arrow-left">‹</span>
+                  Крок {{ index + 1 }}
+                  <span v-if="index < steps.length - 1" class="arrow-right">›</span>
+                </div>
+                <button v-if="index !== 0" class="remove-step" @click="removeStep(index)">×</button>
+              </div>
+              <div v-if="index < steps.length - 1" class="arrow-wrapper">
+                <div class="line">
+                  <div class="chevron"></div>
+                </div>
+              </div>
+            </template>
+            <button class="add-button" @click="addStep">
+              <span class="plus-icon">+</span> Додати
+            </button>
           </div>
-          <div class="step-line"></div>
-          <button class="add-button">
-            <span class="plus-icon">+</span>
-            <span>Додати</span>
-          </button>
         </div>
 
+        <!-- Document count -->
         <div class="info-row">
-          <span>Буде відправлено документів: 1</span>
+          <span>Буде відправлено документів: {{ steps.length }}</span>
         </div>
 
+        <!-- Recipients list -->
         <div class="recipients-row">
-          <span>Немає одержувачів</span>
+          <template v-if="currentRecipients.length">
+            <div class="recipients-scroll-wrapper">
+              <table class="recipient-table">
+              <thead><tr><th>Одержувач</th><th>Тип</th><th>Посада</th><th></th></tr></thead>
+              <tbody>
+              <tr v-for="(r, idx) in currentRecipients" :key="idx">
+                <td>{{ r.email }}</td>
+                <td>{{ r.action }}</td>
+                <td>{{ r.position }}</td>
+                <td>
+                  <button class="icon-button" title="Редагувати" @click="editRecipient(idx)">✎</button>
+                  <button class="icon-button" title="Видалити" @click="removeRecipient(idx)">✕</button>
+                </td>
+              </tr>
+              </tbody>
+              </table>
+            </div>
+          </template>
+          <span v-else>Немає одержувачів</span>
         </div>
 
+        <!-- Sender -->
         <div class="form-group from-group">
           <label>Від</label>
           <div class="select-wrapper">
             <select v-model="sender" class="form-select">
-              <option value="">Виберіть відправника</option>
+              <option disabled value="">Виберіть відправника</option>
+              <option>Користувач 1</option>
+              <option>Користувач 2</option>
             </select>
           </div>
         </div>
 
+        <!-- Recipient form -->
         <div class="form-row">
           <div class="form-group email-group">
-            <label>Кому</label>
-            <div class="select-wrapper">
-              <select v-model="contactMethod" class="form-select">
-                <option value="email">Один або декілька e-mail</option>
-              </select>
-            </div>
+            <label>Email одержувача</label>
+            <input v-model="recipientEmail" type="email" placeholder="email@example.com" class="form-select" />
           </div>
-
           <div class="form-group purpose-group">
+            <label>Призначення</label>
             <div class="select-wrapper">
               <select v-model="purpose" class="form-select">
-                <option value="signature">На підпис</option>
+                <option v-for="a in actions" :key="a">{{ a }}</option>
               </select>
             </div>
           </div>
         </div>
 
         <div class="checkbox-group">
-          <input type="checkbox" id="notify" v-model="notifyImmediately">
+          <input type="checkbox" id="notify" v-model="notifyImmediately" />
           <label for="notify">Надіслати сповіщення одержувачу негайно</label>
         </div>
 
         <div class="checkbox-group">
-          <input type="checkbox" id="attachments" v-model="addAttachments">
+          <input type="checkbox" id="attachments" v-model="addAttachments" />
           <label for="attachments">Додати документи як вкладення до листа</label>
         </div>
 
+        <!-- Position -->
         <div class="form-group position-group">
           <label>Посада</label>
           <div class="select-wrapper">
             <select v-model="position" class="form-select">
-              <option value="">Не вказано</option>
+              <option v-for="p in positions" :key="p" :value="p">{{ p }}</option>
             </select>
           </div>
         </div>
-      </div>
 
-      <div class="modal-footer">
-        <div class="left-buttons">
-          <button class="save-template-button">
-            <span class="icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-            </span>
-            Зберегти як шаблон
-          </button>
-          <button class="template-button">
-            <span class="icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="7" x="3" y="3" rx="1"/><rect width="9" height="7" x="3" y="14" rx="1"/><rect width="5" height="7" x="16" y="14" rx="1"/></svg>
-            </span>
+
+        <!-- Save Template modal -->
+        <div v-if="showDevModal" class="mt-4 p-4 bg-gray-100 text-center rounded border">
+          <p>🔧 Модуль "Зберегти як шаблон" у розробці</p>
+          <button @click="showDevModal = false" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded">
+            Закрити
           </button>
         </div>
+        <div v-if="showTemplateDropdown" class="template-dropdown">
+          <label for="template">Завантажити шаблон маршруту</label>
+          <select id="template" class="form-select">
+            <option disabled selected>Виберіть шаблон</option>
+            <option>Шаблон 1</option>
+            <option>Шаблон 2</option>
+          </select>
+        </div>
+      </div>
 
+
+      <!-- Footer buttons -->
+      <div class="modal-footer">
+        <div class="left-buttons">
+          <button class="save-template-button" @click="saveAsTemplate">💾 Зберегти як шаблон</button>
+          <button class="template-button" @click="toggleTemplateDropdown">📂</button>
+        </div>
         <div class="right-buttons">
-          <button class="add-recipient-button">
-            <span class="icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
-            </span>
-            Додати одержувача
-          </button>
-          <button class="send-button">
-            <span class="icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
-            </span>
-            Відправити
-          </button>
+          <button class="add-recipient-button" :disabled="!recipientEmail" @click="addRecipient">➕ Додати одержувача</button>
+          <button class="send-button" @click="sendRoute">📤 Відправити</button>
         </div>
       </div>
     </div>
   </div>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
-      sender: '',
-      contactMethod: 'email',
-      purpose: 'signature',
-      position: '',
-      notifyImmediately: false,
-      addAttachments: false
-    }
-  }
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+
+interface Recipient {
+  email: string
+  action: string
+  position: string
+  notify: boolean
+  attachAsLetter: boolean
 }
+
+interface RouteStep {
+  id: number
+  recipients: Recipient[]
+}
+
+const steps = ref<RouteStep[]>([{ id: 1, recipients: [] }])
+const currentStepIndex = 0
+let nextStepId = 2
+
+const editingIndex = ref<number | null>(null)
+const recipientEmail = ref('')
+const purpose = ref('На підпис')
+const position = ref('Не вказано')
+const sender = ref('')
+const notifyImmediately = ref(false)
+const addAttachments = ref(false)
+
+const showDevModal = ref(false)
+const showTemplateDropdown = ref(false)
+
+const actions = [
+  'На підпис',
+  'На узгодження',
+  'Відправити на пошту',
+  'Для перегляду',
+  'Редагування (необов’язкове)',
+  'Редагування і узгодження',
+  'Підпис і печатка',
+  'На печатку'
+]
+
+const positions = ['Не вказано', 'Бухгалтер', 'Водій', 'Експедитор', 'Директор']
+
+const currentRecipients = computed(() => steps.value[currentStepIndex].recipients)
+
+const addStep = () => {
+  steps.value.push({ id: nextStepId++, recipients: [] })
+}
+
+const removeStep = (index: number) => {
+  steps.value.splice(index, 1)
+}
+
+const removeRecipient = (idx: number) => {
+  steps.value[currentStepIndex].recipients.splice(idx, 1)
+}
+
+const addRecipient = () => {
+  if (!recipientEmail.value) return
+
+  const recipient: Recipient = {
+    email: recipientEmail.value,
+    action: purpose.value,
+    position: position.value,
+    notify: notifyImmediately.value,
+    attachAsLetter: addAttachments.value
+  }
+
+  if (editingIndex.value !== null) {
+    steps.value[currentStepIndex].recipients[editingIndex.value] = recipient
+    editingIndex.value = null
+  } else {
+    steps.value[currentStepIndex].recipients.push(recipient)
+  }
+
+  recipientEmail.value = ''
+  purpose.value = 'На підпис'
+  position.value = 'Не вказано'
+  notifyImmediately.value = false
+  addAttachments.value = false
+}
+
+const sendRoute = () => {
+  alert('📤 Маршрут відправлено!')
+  console.log(JSON.stringify(steps.value, null, 2))
+}
+
+const saveAsTemplate = () => {
+  showDevModal.value = true
+}
+
+const toggleTemplateDropdown = () => {
+  showTemplateDropdown.value = !showTemplateDropdown.value
+}
+
+const editRecipient = (index: number) => {
+  const r = steps.value[currentStepIndex].recipients[index]
+  recipientEmail.value = r.email
+  purpose.value = r.action
+  position.value = r.position
+  notifyImmediately.value = r.notify
+  addAttachments.value = r.attachAsLetter
+  editingIndex.value = index
+}
+
 </script>
 
 <style scoped>
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
+.recipients-scroll-wrapper {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
 }
 
-.modal-container {
-  background-color: white;
-  border-radius: 8px;
+.recipient-table {
   width: 100%;
-  max-width: 800px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+  table-layout: auto;
 }
 
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #eee;
+.recipient-table td, .recipient-table th {
+  padding: 8px 12px;
+  text-align: left;
+  vertical-align: middle;
+  color: #000;
 }
 
-.modal-header h2 {
-  margin: 0;
-  font-size: 1.25rem;
-  color: #333;
+.template-dropdown {
+  width: 100%;
+  max-width: 1000px;
+  margin: 1rem auto 2rem 0;
+  padding-right: 1rem;
 }
 
-.close-button {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
+
+.template-dropdown label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #000;
+}
+
+label {
+  color: #000 !important;
+}
+
+.checkbox-group label {
+  color: #000 !important;
+}
+
+.form-select,
+input[type="email"],
+select {
+  color: #000 !important;
+}
+
+.arrow-left, .arrow-right {
+  font-weight: bold;
+  margin: 0 4px;
+}
+
+.remove-step {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #ccc;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 14px;
+  text-align: center;
+  line-height: 20px;
   cursor: pointer;
-  color: #999;
-}
-
-.modal-body {
-  padding: 1.5rem;
-}
-
-.description {
-  margin-top: 0;
-  margin-bottom: 1.5rem;
-  color: #666;
+  border: none;
 }
 
 .step-container {
   display: flex;
   align-items: center;
   margin-bottom: 1.5rem;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  gap: 12px;
+}
+
+.step-box {
+  position: relative;
+  flex: 0 0 auto;
+  width: 100px;
+  height: 48px;
 }
 
 .step {
+  width: 100%;
+  height: 100%;
   background-color: #22a7f0;
   color: white;
-  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 4px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
-.step-line {
-  flex-grow: 1;
-  height: 2px;
-  background-color: #22a7f0;
-  margin: 0 1rem;
+.step-box.active .step {
+  background-color: #1a86c7;
 }
 
 .add-button {
@@ -214,16 +367,28 @@ export default {
   padding: 0.5rem 1rem;
   cursor: pointer;
   font-weight: 500;
+  margin-left: 16px;
+  flex-shrink: 0;
 }
 
 .plus-icon {
   font-size: 1.25rem;
 }
 
+.icon-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  margin-left: 8px;
+  color: #000;
+  vertical-align: middle;
+}
+
 .info-row, .recipients-row {
   padding: 1rem 0;
   border-bottom: 1px solid #eee;
-  color: #666;
+  color: #000;
 }
 
 .form-group {
@@ -234,7 +399,7 @@ export default {
 .form-group label {
   display: block;
   margin-bottom: 0.5rem;
-  color: #666;
+  color: #000;
 }
 
 .select-wrapper {
@@ -290,6 +455,60 @@ export default {
   width: 200px;
 }
 
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal-container {
+  background-color: white;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 800px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #000;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #999;
+}
+
+.modal-body {
+  padding: 1.5rem 1.5rem 0 1.5rem;
+}
+
+.description {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: #000;
+}
+
 .modal-footer {
   display: flex;
   justify-content: space-between;
@@ -302,7 +521,10 @@ export default {
   gap: 0.5rem;
 }
 
-.save-template-button, .template-button, .add-recipient-button, .send-button {
+.save-template-button,
+.template-button,
+.add-recipient-button,
+.send-button {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -310,35 +532,45 @@ export default {
   border-radius: 4px;
   cursor: pointer;
   font-weight: 500;
-}
-
-.save-template-button {
   background-color: #22a7f0;
   color: white;
   border: none;
 }
 
 .template-button {
-  background-color: #22a7f0;
-  color: white;
-  border: none;
   padding: 0.75rem;
 }
 
-.add-recipient-button {
-  background-color: #22a7f0;
-  color: white;
-  border: none;
+.step-scroll {
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
 }
 
-.send-button {
-  background-color: #22a7f0;
-  color: white;
-  border: none;
-}
-
-.icon {
+.arrow-wrapper {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
+  height: 48px;
 }
+
+.line {
+  position: relative;
+  width: 32px;
+  height: 2px;
+  background-color: #22a7f0;
+  margin: 0 6px;
+}
+
+.chevron {
+  position: absolute;
+  top: 50%;
+  right: -8px;
+  transform: translateY(-50%) rotate(-45deg);
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid #22a7f0;
+  border-bottom: 2px solid #22a7f0;
+  background: transparent;
+}
+
 </style>
